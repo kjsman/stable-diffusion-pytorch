@@ -50,7 +50,7 @@ class ResidualBlock(nn.Module):
 class MultiheadAttention(nn.MultiheadAttention):
     """nn.MultiheadAttention of PyTorch does not support to turn off bias of input projection
     while turning on bias of output projection -- so here we make a quick fix."""
-    def __init__(self, embed_dim, num_heads, dropout=0, bias=False, add_bias_kv=False, add_zero_attn=False,
+    def __init__(self, embed_dim, num_heads, dropout=0., bias=False, add_bias_kv=False, add_zero_attn=False,
                  kdim=None, vdim=None, batch_first=False, device=None, dtype=None):
         super().__init__(embed_dim, num_heads, dropout, bias, add_bias_kv, add_zero_attn, kdim, vdim,
                          batch_first, device, dtype)
