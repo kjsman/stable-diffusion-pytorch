@@ -74,7 +74,7 @@ class AttentionBlock(nn.Module):
         
         n, c, h, w = x.shape
         x = x.view((n, c, h * w))   # (n, c, hw)
-        x = torch.swapaxes(x, -1, -2)  # (n, hw, c)
+        x = x.transpose(-1, -2)  # (n, hw, c)
 
         residue_short = x
         x = self.layernorm_1(x)
@@ -93,7 +93,7 @@ class AttentionBlock(nn.Module):
         x = self.linear_geglu_2(x)
         x += residue_short
 
-        x = torch.swapaxes(x, -1, -2)  # (n, c, hw)
+        x = x.transpose(-1, -2)  # (n, c, hw)
         x = x.view((n, c, h, w))    # (n, c, h, w)
 
         return self.conv_output(x) + residue_long

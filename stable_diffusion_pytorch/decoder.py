@@ -16,9 +16,9 @@ class AttentionBlock(nn.Module):
 
         n, c, h, w = x.shape
         x = x.view((n, c, h * w))
-        x = torch.swapaxes(x, -1, -2)
+        x = x.transpose(-1, -2)
         x = self.attention(x)
-        x = torch.swapaxes(x, -1, -2)
+        x = x.transpose(-1, -2)
         x = x.view((n, c, h, w))
 
         x += residue
