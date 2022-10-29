@@ -1,13 +1,14 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+from .attention import SelfAttention
 
 
 class AttentionBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.groupnorm = nn.GroupNorm(32, channels)
-        self.attention = nn.MultiheadAttention(channels, 1, batch_first=True)
+        self.attention = SelfAttention(1, channels)
     
     def forward(self, x):
         residue = x
@@ -16,7 +17,7 @@ class AttentionBlock(nn.Module):
         n, c, h, w = x.shape
         x = x.view((n, c, h * w))
         x = torch.swapaxes(x, -1, -2)
-        x, _ = self.attention(x, x, x)
+        x = self.attention(x)
         x = torch.swapaxes(x, -1, -2)
         x = x.view((n, c, h, w))
 

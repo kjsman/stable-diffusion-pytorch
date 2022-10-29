@@ -27,7 +27,7 @@ Heavily referred to following repositories. Big kudos to them!
 
 1. Clone or download this repository.
 2. Install dependencies: Run `pip install torch numpy Pillow regex` or `pip install -r requirements.txt`.
-3. Download `data.tar` from [here](https://huggingface.co/jinseokim/stable-diffusion-pytorch-data/resolve/main/data.tar) and unpack in the parent folder of `stable_diffusion_pytorch`. Your folders should be like this:
+3. Download `data.v20221029.tar` from [here](https://huggingface.co/jinseokim/stable-diffusion-pytorch-data/resolve/main/data.v20221029.tar) and unpack in the parent folder of `stable_diffusion_pytorch`. Your folders should be like this:
 ```
 stable-diffusion-pytorch(-main)/
 ├─ data/

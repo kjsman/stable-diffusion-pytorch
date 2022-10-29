@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+from .attention import SelfAttention, CrossAttention
 
 
 class TimeEmbedding(nn.Module):
@@ -47,57 +48,8 @@ class ResidualBlock(nn.Module):
 
         return merged + self.residual_layer(residue)
 
-class MultiheadAttention(nn.MultiheadAttention):
-    """nn.MultiheadAttention of PyTorch does not support to turn off bias of input projection
-    while turning on bias of output projection -- so here we make a quick fix."""
-    def __init__(self, embed_dim, num_heads, dropout=0., bias=False, add_bias_kv=False, add_zero_attn=False,
-                 kdim=None, vdim=None, batch_first=False, device=None, dtype=None):
-        super().__init__(embed_dim, num_heads, dropout, bias, add_bias_kv, add_zero_attn, kdim, vdim,
-                         batch_first, device, dtype)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=True)
-
-    def forward(self, query, key, value, key_padding_mask=None, need_weights=True,
-                attn_mask=None, average_attn_weights=True):
-        is_batched = query.dim() == 3
-
-        if self.batch_first and is_batched:
-            # make sure that the transpose op does not affect the "is" property
-            if key is value:
-                if query is key:
-                    query = key = value = query.transpose(1, 0)
-                else:
-                    query, key = [x.transpose(1, 0) for x in (query, key)]
-                    value = key
-            else:
-                query, key, value = [x.transpose(1, 0) for x in (query, key, value)]
-
-        if not self._qkv_same_embed_dim:
-            attn_output, attn_output_weights = F.multi_head_attention_forward(
-                query, key, value, self.embed_dim, self.num_heads,
-                self.in_proj_weight, self.in_proj_bias,
-                self.bias_k, self.bias_v, self.add_zero_attn,
-                self.dropout, self.out_proj.weight, self.out_proj.bias,
-                training=self.training,
-                key_padding_mask=key_padding_mask, need_weights=need_weights,
-                attn_mask=attn_mask, use_separate_proj_weight=True,
-                q_proj_weight=self.q_proj_weight, k_proj_weight=self.k_proj_weight,
-                v_proj_weight=self.v_proj_weight, average_attn_weights=average_attn_weights)
-        else:
-            attn_output, attn_output_weights = F.multi_head_attention_forward(
-                query, key, value, self.embed_dim, self.num_heads,
-                self.in_proj_weight, self.in_proj_bias,
-                self.bias_k, self.bias_v, self.add_zero_attn,
-                self.dropout, self.out_proj.weight, self.out_proj.bias,
-                training=self.training,
-                key_padding_mask=key_padding_mask, need_weights=need_weights,
-                attn_mask=attn_mask, average_attn_weights=average_attn_weights)
-        if self.batch_first and is_batched:
-            return attn_output.transpose(1, 0), attn_output_weights
-        else:
-            return attn_output, attn_output_weights
-
 class AttentionBlock(nn.Module):
-    def __init__(self, n_head: int, n_embd: int, n_context=768):
+    def __init__(self, n_head: int, n_embd: int, d_context=768):
         super().__init__()
         channels = n_head * n_embd
         
@@ -105,9 +57,9 @@ class AttentionBlock(nn.Module):
         self.conv_input = nn.Conv2d(channels, channels, kernel_size=1, padding='same')
 
         self.layernorm_1 = nn.LayerNorm(channels)
-        self.attention_1 = MultiheadAttention(channels, n_head, batch_first=True)
+        self.attention_1 = SelfAttention(n_head, channels, in_proj_bias=False)
         self.layernorm_2 = nn.LayerNorm(channels)
-        self.attention_2 = MultiheadAttention(channels, n_head, kdim=n_context, vdim=n_context, batch_first=True)
+        self.attention_2 = CrossAttention(n_head, channels, d_context, in_proj_bias=False)
         self.layernorm_3 = nn.LayerNorm(channels)
         self.linear_geglu_1  = nn.Linear(channels, 4 * channels * 2)
         self.linear_geglu_2 = nn.Linear(4 * channels, channels)
@@ -126,12 +78,12 @@ class AttentionBlock(nn.Module):
 
         residue_short = x
         x = self.layernorm_1(x)
-        x, _ = self.attention_1(x, x, x)
+        x = self.attention_1(x)
         x += residue_short
 
         residue_short = x
         x = self.layernorm_2(x)
-        x, _ = self.attention_2(x, context, context)
+        x = self.attention_2(x, context)
         x += residue_short
 
         residue_short = x

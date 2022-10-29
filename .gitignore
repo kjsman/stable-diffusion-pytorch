@@ -201,4 +201,4 @@ cython_debug/
 data/
 ddata/
 migrators/
-data.tar
+data.*.tar

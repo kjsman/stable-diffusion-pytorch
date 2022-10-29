@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+from .attention import SelfAttention
 
 
 class CLIPEmbedding(nn.Module):
@@ -18,15 +19,15 @@ class CLIPLayer(nn.Module):
     def __init__(self, n_head: int, n_embd: int):
         super().__init__()
         self.layernorm_1 = nn.LayerNorm(n_embd)
-        self.attention = nn.MultiheadAttention(n_embd, n_head, batch_first=True)
+        self.attention = SelfAttention(n_head, n_embd)
         self.layernorm_2 = nn.LayerNorm(n_embd)
         self.linear_1 = nn.Linear(n_embd, 4 * n_embd)
         self.linear_2 = nn.Linear(4 * n_embd, n_embd)
 
-    def forward(self, x, causal_attention_mask):
+    def forward(self, x):
         residue = x
         x = self.layernorm_1(x)
-        x, _ = self.attention(x, x, x, attn_mask=causal_attention_mask)
+        x = self.attention(x, causal_mask=True)
         x += residue
 
         residue = x
@@ -46,16 +47,12 @@ class CLIP(nn.Module):
             CLIPLayer(12, 768) for i in range(12)
         ])
         self.layernorm = nn.LayerNorm(768)
-
-        causal_attention_mask = torch.ones(77, 77, dtype=torch.bool)
-        causal_attention_mask.triu_(1)
-        self.register_buffer('causal_attention_mask', causal_attention_mask)
     
     def forward(self, tokens: torch.LongTensor) -> torch.FloatTensor:
         tokens = tokens.type(torch.long)
         
         state = self.embedding(tokens)
         for layer in self.layers:
-            state = layer(state, self.causal_attention_mask)
+            state = layer(state)
         output = self.layernorm(state)
         return output
