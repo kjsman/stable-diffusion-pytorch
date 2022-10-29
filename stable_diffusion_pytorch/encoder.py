@@ -7,7 +7,7 @@ from .decoder import AttentionBlock, ResidualBlock
 class Encoder(nn.Sequential):
     def __init__(self):
         super().__init__(
-            nn.Conv2d(3, 128, kernel_size=3, padding='same'),
+            nn.Conv2d(3, 128, kernel_size=3, padding=1),
             ResidualBlock(128, 128),
             ResidualBlock(128, 128),
             nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1),
@@ -24,8 +24,8 @@ class Encoder(nn.Sequential):
             ResidualBlock(512, 512),
             nn.GroupNorm(32, 512),
             nn.SiLU(),
-            nn.Conv2d(512, 8, kernel_size=3, padding='same'),
-            nn.Conv2d(8, 8, kernel_size=1, padding='same'),
+            nn.Conv2d(512, 8, kernel_size=3, padding=1),
+            nn.Conv2d(8, 8, kernel_size=1, padding=0),
         )
 
     def forward(self, x, noise):

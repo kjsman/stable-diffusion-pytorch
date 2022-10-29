@@ -28,15 +28,15 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.groupnorm_1 = nn.GroupNorm(32, in_channels)
-        self.conv_1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding='same')
+        self.conv_1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
 
         self.groupnorm_2 = nn.GroupNorm(32, out_channels)
-        self.conv_2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding='same')
+        self.conv_2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
 
         if in_channels == out_channels:
             self.residual_layer = nn.Identity()
         else:
-            self.residual_layer = nn.Conv2d(in_channels, out_channels, kernel_size=1, padding='same')
+            self.residual_layer = nn.Conv2d(in_channels, out_channels, kernel_size=1, padding=0)
     
     def forward(self, x):
         residue = x
@@ -54,8 +54,8 @@ class ResidualBlock(nn.Module):
 class Decoder(nn.Sequential):
     def __init__(self):
         super().__init__(
-            nn.Conv2d(4, 4, kernel_size=1, padding='same'),
-            nn.Conv2d(4, 512, kernel_size=3, padding='same'),
+            nn.Conv2d(4, 4, kernel_size=1, padding=0),
+            nn.Conv2d(4, 512, kernel_size=3, padding=1),
             ResidualBlock(512, 512),
             AttentionBlock(512),
             ResidualBlock(512, 512),
@@ -63,23 +63,23 @@ class Decoder(nn.Sequential):
             ResidualBlock(512, 512),
             ResidualBlock(512, 512),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(512, 512, kernel_size=3, padding='same'),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             ResidualBlock(512, 512),
             ResidualBlock(512, 512),
             ResidualBlock(512, 512),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(512, 512, kernel_size=3, padding='same'),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             ResidualBlock(512, 256),
             ResidualBlock(256, 256),
             ResidualBlock(256, 256),
             nn.Upsample(scale_factor=2),
-            nn.Conv2d(256, 256, kernel_size=3, padding='same'),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
             ResidualBlock(256, 128),
             ResidualBlock(128, 128),
             ResidualBlock(128, 128),
             nn.GroupNorm(32, 128),
             nn.SiLU(),
-            nn.Conv2d(128, 3, kernel_size=3, padding='same'),
+            nn.Conv2d(128, 3, kernel_size=3, padding=1),
         )
 
     def forward(self, x):
