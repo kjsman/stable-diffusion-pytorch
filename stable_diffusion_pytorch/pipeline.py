@@ -8,9 +8,21 @@ from . import model_loader
 
 
 def generate(
-        prompts, uncond_prompts=None, input_images=None, strength=0.8,
-        do_cfg=True, cfg_scale=7.5, height=512, width=512, sampler="k_lms",
-        n_inference_steps=50, models={}, seed=None, device=None, idle_device=None):
+        prompts,
+        uncond_prompts=None,
+        input_images=None,
+        strength=0.8,
+        do_cfg=True,
+        cfg_scale=7.5,
+        height=512,
+        width=512,
+        sampler="k_lms",
+        n_inference_steps=50,
+        models=None,
+        seed=None,
+        device=None,
+        idle_device=None
+):
     r"""
     Function invoked when calling the pipeline for generation.
     Args:
@@ -19,7 +31,7 @@ def generate(
         uncond_prompts (`List[str]`, *optional*, defaults to `[""] * len(prompts)`):
             The prompts not to guide the image generation. Ignored when not using guidance (i.e. ignored if
             `do_cfg` is False).
-        input_images (List[`PIL.Image.Image`]):
+        input_images (List[Union[`PIL.Image.Image`, str]]):
             Images which are served as the starting point for the image generation.
         strength (`float`, *optional*, defaults to 0.8):
             Conceptually, indicates how much to transform the reference `input_images`. Must be between 0 and 1.
@@ -124,6 +136,9 @@ def generate(
             encoder.to(device)
             processed_input_images = []
             for input_image in input_images:
+                if type(input_image) is str:
+                    input_image = Image.open(input_image)
+
                 input_image = input_image.resize((width, height))
                 input_image = np.array(input_image)
                 input_image = torch.tensor(input_image, dtype=torch.float32)
