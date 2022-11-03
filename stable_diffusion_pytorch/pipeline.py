@@ -57,7 +57,7 @@ def generate(
     Note:
         This docstring is heavily copied from huggingface/diffusers.
     """
-    with torch.inference_mode():
+    with torch.no_grad():
         if not isinstance(prompts, (list, tuple)) or not prompts:
             raise ValueError("prompts must be a non-empty list or tuple")
 
