@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 from . import Tokenizer
 from . import KLMSSampler, KEulerSampler, KEulerAncestralSampler
 from . import util
@@ -128,6 +129,12 @@ def generate(
         elif sampler == "k_euler_ancestral":
             sampler = KEulerAncestralSampler(n_inference_steps=n_inference_steps,
                                              generator=generator)
+        else:
+            raise ValueError(
+                "Unknown sampler value %s. "
+                "Accepted values are {k_lms, k_euler, k_euler_ancestral}"
+                % sampler
+            )
 
         noise_shape = (len(prompts), 4, height // 8, width // 8)
 
@@ -165,7 +172,10 @@ def generate(
 
         diffusion = models.get('diffusion') or model_loader.load_diffusion(device)
         diffusion.to(device)
-        for i, timestep in enumerate(sampler.timesteps):
+
+        progress_bar = tqdm(list(enumerate(sampler.timesteps)))
+        for i, timestep in progress_bar:
+            progress_bar.set_description("%3d %3d" % (i, timestep))
             time_embedding = util.get_time_embedding(timestep).to(device)
 
             input_latents = latents * sampler.get_input_scale()
