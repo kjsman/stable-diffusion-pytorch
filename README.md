@@ -22,6 +22,7 @@ Heavily referred to following repositories. Big kudos to them!
 * Numpy
 * Pillow
 * regex
+* tqdm
 
 ## How to Install
 
