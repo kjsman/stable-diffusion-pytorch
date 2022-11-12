@@ -18,7 +18,7 @@ def generate(
         width=512,
         sampler="k_lms",
         n_inference_steps=50,
-        models=None,
+        models={},
         seed=None,
         device=None,
         idle_device=None
